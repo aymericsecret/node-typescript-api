@@ -328,7 +328,12 @@ export default class WordpressRouter {
             if (this.wpStorageTmp[lang][endpoint] === undefined) {
                 this.wpStorageTmp[lang][endpoint] = {};
             }
-            const params = {lang, per_page: Config.wp_per_page};
+            const params = {
+                lang,
+                order: 'asc',
+                orderby: 'menu_order',
+                per_page: Config.wp_per_page,
+            };
             const paramsFormated: string = '?' + WordpressRouter.getParams(params);
             const callBack: (body: any) => void = (body) => {
                 this.wpStorageTmp[lang][endpoint] = body;
