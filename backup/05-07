@@ -1,0 +1,605 @@
+import * as express from 'express';
+import * as request from 'supertest-as-promised';
+import app from '../../src/App';
+import config from '../../src/config/config';
+import { requestAPI } from '../../src/requestAPI';
+// import { getPageFromAPI, requestAPI } from '../../src/requestAPI';
+
+import WordpressRouter from '../../src/routes/wordpress';
+const Config = config();
+
+/**
+ * Testing internal functions
+ */
+describe('init function', () => {
+    // it('should initialize expiration and count variables', () => {
+    //     const wordpressRouter = new WordpressRouter();
+    // });
+    // const initLangEnpoints = jest.fn().mockImplementation(() => Promise.reject('ahhh'));
+    // const getPageFromAPI = jest.fn();
+    // const initLangEnpoints = jest.mock('initLangEnpoints');
+    const pageNbr = 1;
+    const callNbr = Config.langs.length * pageNbr;
+    let wordpressRouter;
+    // let ctx;
+    // beforeEach(() => {
+    //     ctx = {
+    //         attachRoutes: jest.fn(),
+    //         initCountAnswers: jest.fn(),
+    //         initExpiration: jest.fn(),
+    //         initLangEnpoints: jest.fn().mockImplementation((cb) => {
+    //             cb(false, {foo: 'bar'});
+    //         }),
+    //     };
+    // });
+
+    // const ctx = wordpressRouter;
+    // ctx.initLangEnpoints = jest.fn().mockImplementation((cb) => {
+    //     cb(false, { history: [1, 2, 3]});
+    // });
+
+    let spy;
+
+    beforeAll(() => {
+        jest.resetAllMocks();
+        wordpressRouter = new WordpressRouter();
+        spy = jest.fn();
+        // spy = jest.spyOn(wordpressRouter, 'initLangEnpoints');
+    });
+    // beforeAll(() => { // get rid of async
+    //     spy = jest.fn();
+    //     spy = jest.spyOn(wordpressRouter, 'initLangEnpoints');
+    // });
+    // afterEach(() => spy.mockRestore());
+    afterEach(() => jest.restoreAllMocks());
+
+    it('should be resolved and return the resolved value if everything wen well', async () => {
+
+        wordpressRouter.initLangEnpoints = jest.fn(() => Promise.resolve(true));
+        spy = jest.spyOn(wordpressRouter, 'initLangEnpoints');
+        const callNbr = Config.langs.length;
+
+        expect.assertions(3);
+        // Same result : two ways. First one doesn't work if Promise is rejected.
+        // In this case, use second method.
+        // Await method more if result is a Promise
+
+        // First method
+        // const data = await wordpressRouter.init();
+        // expect(data).toBe(true);
+
+        // Second method
+        wordpressRouter.init()
+            .then((result) => {
+                expect(result.success.length).not.toBe(0);
+                expect(result.error.length).toBe(0);
+                expect(spy).toHaveBeenCalledTimes(callNbr);
+            });
+    });
+
+    it('should be rejected and return false something went wrong', async () => {
+
+        wordpressRouter.initLangEnpoints = jest.fn(() => Promise.reject(false));
+        spy = jest.spyOn(wordpressRouter, 'initLangEnpoints');
+
+        expect.assertions(3);
+        return wordpressRouter.init()
+            .then(null, (result) => {
+                expect(result.success.length).toBe(0);
+                expect(result.error.length).not.toBe(0);
+                expect(spy).toHaveBeenCalledTimes(callNbr);
+
+            });
+
+    });
+
+    it('should call initCountAnswers once', async () => {
+
+        wordpressRouter.initLangEnpoints = jest.fn(() => Promise.resolve(true));
+        spy = jest.spyOn(wordpressRouter, 'initCountAnswers');
+
+        expect.assertions(2);
+        return wordpressRouter.init()
+            .then((result) => {
+                expect(spy).toHaveBeenCalledTimes(1);
+                expect(spy).not.toHaveBeenCalledTimes(2);
+
+            });
+
+    });
+
+    it('should call initExpiration once', async () => {
+
+        wordpressRouter.initLangEnpoints = jest.fn(() => Promise.resolve(true));
+        spy = jest.spyOn(wordpressRouter, 'initExpiration');
+
+        expect.assertions(2);
+        return wordpressRouter.init()
+            .then((result) => {
+                expect(spy).toHaveBeenCalledTimes(1);
+                expect(spy).not.toHaveBeenCalledTimes(2);
+
+            });
+
+    });
+
+    it('should call attachRoutes once', async () => {
+
+        wordpressRouter.initLangEnpoints = jest.fn(() => Promise.resolve(true));
+        spy = jest.spyOn(wordpressRouter, 'attachRoutes');
+
+        expect.assertions(2);
+        return wordpressRouter.init()
+            .then((result) => {
+                expect(spy).toHaveBeenCalledTimes(1);
+                expect(spy).not.toHaveBeenCalledTimes(2);
+
+            });
+
+    });
+
+    //     getPageFromAPI.mockImplementationOnce(() => Promise.reject());
+    //     initLangEnpoints.mockImplementationOnce(() => Promise.reject());
+    //     // const getPageFromAPI = jest.mock('getPageFromAPI');
+    //     // getPageFromAPI.mockImplementation(() => Promise.resolve(initialAnswersTotal++));
+    //     // const wordpressRouter = new WordpressRouter();
+    //     // wordpressRouter.init();
+
+    //     // const wordpressRouter = new WordpressRouter();
+    //     // const spy = jest.spyOn(wordpressRouter, 'initCountAnswers');
+    //     // const spy2 = jest.spyOn(wordpressRouter, 'getPageFromAPI');
+
+    //     expect.assertions(1);
+    //     // const data = await wordpressRouter.init();
+    //     // expect(data).toBe('done');
+    //     await expect(wordpressRouter.init()).rejects.toMatch('error');
+    //     // .then((result) => {
+    //     //     expect(result).toBe('error');
+    //     //     // expect(initLangEnpoints.mock.calls.length).toBe(2);
+    //     //     // expect(result).toBe('123');
+    //     //     // expect(spy).toHaveBeenCalledTimes(2);
+    //     //     // expect(spy.mock.results).toBe(1);
+    //     // });
+
+    // });
+});
+
+describe('getWpStorage', () => {
+    it('should have the expiration according to config', () => {
+        const wordpressRouter = new WordpressRouter();
+        const time = new Date();
+        const expiration = Config.expiration;
+
+        const expectedResult = wordpressRouter.initExpiration(Config.expiration);
+        const actualResult = wordpressRouter.getWpStorage();
+
+        expect(actualResult.expiration).toBe(expectedResult);
+    });
+});
+
+// describe('getWpStorageTmp', () => {
+//     it('should have the expiration according to config', () => {
+//         // TODO: not done properly
+//         const wordpressRouter = new WordpressRouter();
+
+//         const actualResult = wordpressRouter.getWpStorageTmp();
+
+//         expect(typeof actualResult).toBe('object');
+//     });
+
+//     it('should have the langs list initiated', () => {
+//         const wordpressRouter = new WordpressRouter();
+//         const langs = Config.langs;
+
+//         const actualResult = wordpressRouter.getWpStorageTmp();
+
+//         expect(actualResult.expiration).toBeDefined();
+//         langs.forEach((lang) => {
+//             expect(actualResult[lang]).toBeDefined();
+//         });
+//     });
+// });
+
+// describe('sizeOf method', () => {
+//     it('should return object\'s number of keys (length)', () => {
+//         const wordpressRouter = new WordpressRouter();
+//         const object = {
+//             name: 'myName',
+//             test: 'test',
+//         };
+
+//         const expectedResult = 2;
+//         const actualResult = wordpressRouter.sizeOf(object);
+
+//         expect(actualResult).toBe(expectedResult);
+//         expect(actualResult).not.toBe(1);
+//     });
+// });
+
+// describe('getParams method', () => {
+//     it('should transform an object into a string', () => {
+//         const wordpressRouter = new WordpressRouter();
+//         const object = {
+//             category: 'my-category',
+//             slug: 'my-slug',
+//         };
+
+//         const expectedResult = 'category=my-category&slug=my-slug';
+//         const actualResult = wordpressRouter.getParams(object);
+
+//         expect(typeof actualResult).toBe('string');
+//         expect(actualResult).toBe(expectedResult);
+//     });
+//     it('should return null if o param passed', () => {
+//         const wordpressRouter = new WordpressRouter();
+//         const object = {};
+
+//         const expectedResult = null;
+//         const actualResult = wordpressRouter.getParams(object);
+
+//         expect(actualResult).toBe(null);
+//     });
+// });
+
+// describe('initExpiration method', () => {
+//     it('should set the expiration date according to the config exporation value', () => {
+//         const wordpressRouter = new WordpressRouter();
+//         const time = new Date();
+//         const expiration = 30;
+
+//         wordpressRouter.initExpiration(expiration);
+
+//         const expectedResult = time.getTime() + expiration;
+//         const actualResult = wordpressRouter.getWpStorage();
+
+//         expect(actualResult.expiration).toBeLessThanOrEqual(expectedResult);
+//     });
+// });
+
+// describe('checkExpiration method', () => {
+
+//     it('should return false if the expiration is not passed', () => {
+//         const wordpressRouter = new WordpressRouter();
+//         const time = new Date();
+//         const expiration = 30;
+
+//         wordpressRouter.initExpiration(expiration);
+//         const wpStorage = wordpressRouter.getWpStorage();
+
+//         const expectedResult = time.getTime() + expiration;
+//         const actualResult = wordpressRouter.checkExpiration(wpStorage.expiration);
+
+//         expect(actualResult).toBe(false);
+//     });
+
+//     it('should return true if the expiration is passed', () => {
+//         const wordpressRouter = new WordpressRouter();
+//         const time = new Date();
+//         const expiration = 0;
+
+//         wordpressRouter.initExpiration(expiration);
+//         const wpStorage = wordpressRouter.getWpStorage();
+
+//         const expectedResult = time.getTime() + expiration;
+//         const actualResult = wordpressRouter.checkExpiration(wpStorage.expiration);
+//         expect(actualResult).toBe(true);
+//     });
+
+//     it('should trigger callback function', () => {
+//         const mockCallback = jest.fn();
+//         const wordpressRouter = new WordpressRouter();
+//         const time = new Date();
+//         const expiration = 0;
+
+//         wordpressRouter.initExpiration(expiration);
+//         const wpStorage = wordpressRouter.getWpStorage();
+
+//         wordpressRouter.checkExpiration(wpStorage.expiration, mockCallback);
+
+//         expect(mockCallback.mock.calls.length).toBe(1);
+//     });
+// });
+
+// describe('addCountAnswer methods', () => {
+//     it('should increase by 1 answersTotal but not answersCount', () => {
+//         const wordpressRouter = new WordpressRouter();
+//         const langNbr = Config.langs.length;
+
+//         const answerCount = wordpressRouter.answerCount;
+//         const answersTotal = wordpressRouter.answersTotal;
+
+//         wordpressRouter.addCountAnswer();
+//         expect(wordpressRouter.answersTotal).toBe(langNbr + 1);
+//         // expect(wordpressRouter.answerCount).toBe(2);
+//     });
+// });
+
+// describe('initCountAnswers methods', () => {
+
+//     // TODO: initCountAnswers - add tests after api is runing, when initilization has api calls and values are updated
+//     it('should set public variables answersTotal and answerCount to 0', () => {
+//         const wordpressRouter = new WordpressRouter();
+//         const initValues = [1, 2];
+//         wordpressRouter.answerCount = initValues[0];
+//         wordpressRouter.answersTotal = initValues[1];
+
+//         wordpressRouter.initCountAnswers();
+
+//         expect(wordpressRouter.answerCount).toBe(0);
+//         expect(wordpressRouter.answersTotal).toBe(0);
+//         expect(wordpressRouter.answerCount).not.toBe(initValues[0]);
+//         expect(wordpressRouter.answersTotal).not.toBe(initValues[1]);
+//     });
+// });
+
+/// END
+
+// describe('checkCountAnswer methods', () => {
+//     const wordpressRouter = new WordpressRouter();
+//     let spy;
+
+//     beforeAll(() => { // get rid of async
+//         spy = jest.fn();
+//         spy = jest.spyOn(wordpressRouter, 'getPageFromAPI');
+//     });
+//     afterEach(() => spy.mockRestore());
+//     it('should reset both answersTotal and answerCount when answersCount >= answersTotal', () => {
+//         // const wordpressRouter = new WordpressRouter();
+//         // const spy = jest.spyOn(wordpressRouter, 'initCountAnswers');
+//         // const spy2 = jest.spyOn(wordpressRouter, 'getPageFromAPI');
+//         wordpressRouter.init();
+
+//         expect(spy).toHaveBeenCalledTimes(2);
+//         expect(spy.mock.results).toBe(1);
+
+//         // return wordpressRouter.getPageFromAPI().then((bar) => {
+//         //     expect(bar).toEqual('bar');
+//         //   });
+//         // let initialAnswersTotal = 0;
+//         // // let initialAnswerCount = 0;
+//         // const getPageFromAPI = jest.fn().mockImplementationOnce(() => Promise.resolve(initialAnswersTotal++));
+//         // // const getPageFromAPI = jest.mock('getPageFromAPI');
+//         // // getPageFromAPI.mockImplementation(() => Promise.resolve(initialAnswersTotal++));
+//         // const wordpressRouter = new WordpressRouter();
+//         // wordpressRouter.init();
+//         // expect(getPageFromAPI.mock.calls.length).toBe(2);
+
+//         // initialAnswersTotal += wordpressRouter.answersTotal;
+//         // initialAnswerCount += wordpressRouter.answerCount;
+
+//         // for (let index = 0; index < initialAnswersTotal - 1; index++) {
+//         //     wordpressRouter.addCountAnswer();
+//         // }
+
+//         // expect(wordpressRouter.answerCount).toBe(initialAnswerCount);
+//         // expect(wordpressRouter.answersTotal).toBe(initialAnswersTotal + 2);
+
+//         // wordpressRouter.checkCountAnswer();
+
+//         // expect(wordpressRouter.answerCount).toBe(initialAnswerCount + 1);
+//         // expect(wordpressRouter.answersTotal).toBe(initialAnswersTotal + 2);
+
+//         // const expectedValue = wordpressRouter.checkCountAnswer();
+
+//         // expect(wordpressRouter.answerCount).toBe(0);
+//         // expect(expectedValue).toBe(true);
+//         // expect(wordpressRouter.answersTotal).toBe(0);
+//     });
+
+//     it('should not reset both answersTotal and answerCount when answersCount < answersTotal', () => {
+//         const wordpressRouter = new WordpressRouter();
+
+//         wordpressRouter.addCountAnswer();
+//         wordpressRouter.addCountAnswer();
+
+//         expect(wordpressRouter.answerCount).toBe(0);
+//         expect(wordpressRouter.answersTotal).toBe(2);
+
+//         const expectedValue = wordpressRouter.checkCountAnswer();
+
+//         expect(expectedValue).toBe(false);
+//         expect(wordpressRouter.answerCount).not.toBe(0);
+//         expect(wordpressRouter.answersTotal).not.toBe(0);
+//     });
+
+//     // TODO: After adding getPageFromAPI - add tests after wpStorageTmp is being modified, as wpStorage will be different
+//     it('should replace wpStorage values with wpStorageTmp values', () => {
+//         const wordpressRouter = new WordpressRouter();
+
+//         let wpStorage = wordpressRouter.getWpStorage();
+//         let wpStorageTmp = wordpressRouter.getWpStorage();
+//         expect(wpStorage).toBe(wpStorageTmp);
+
+//         wordpressRouter.addCountAnswer();
+
+//         expect(wordpressRouter.answerCount).toBe(0);
+//         expect(wordpressRouter.answersTotal).toBe(1);
+
+//         wordpressRouter.checkCountAnswer();
+
+//         expect(wordpressRouter.answerCount).toBe(0);
+//         expect(wordpressRouter.answersTotal).toBe(0);
+
+//         wpStorage = wordpressRouter.getWpStorage();
+//         wpStorageTmp = wordpressRouter.getWpStorage();
+//         expect(wpStorage).toBe(wpStorageTmp);
+//     });
+
+//     it('should not loose the expiration value', () => {
+//         const wordpressRouter = new WordpressRouter();
+//         // const time = new Date();
+//         // const expiration = Config.expiration;
+
+//         let wpStorage = wordpressRouter.getWpStorage();
+//         let wpStorageTmp = wordpressRouter.getWpStorageTmp();
+
+//         let actualResult = wpStorage;
+
+//         expect(wpStorage).not.toBe(wpStorageTmp);
+//         expect(wpStorage.expiration).toBe(wpStorageTmp.expiration);
+
+//         wordpressRouter.checkCountAnswer();
+
+//         wpStorage = wordpressRouter.getWpStorage();
+//         wpStorageTmp = wordpressRouter.getWpStorageTmp();
+
+//         actualResult = wpStorage;
+
+//         expect(actualResult.expiration).not.toBe(null);
+//         expect(actualResult.expiration).toBe(wpStorageTmp.expiration);
+//     });
+// });
+
+/**
+ * Testing api calls
+ */
+// describe('getPageFromAPI', () => {
+
+//     let mockArgs = {
+//         endpoint: '/pages',
+//         lang: 'en',
+//         params: {},
+//         store: 'pages',
+//         type: '',
+//     };
+
+//     beforeEach(() => {
+//         mockArgs = {
+//             endpoint: '/pages',
+//             lang: 'en',
+//             params: {},
+//             store: 'pages',
+//             type: '',
+//         };
+//     });
+
+//     it('should calls addCountAnswer and increase answersTotal', () => {
+//         const wordpressRouter = new WordpressRouter();
+//         const getPageFromAPI = jest.fn();
+//         expect(wordpressRouter.answerCount).toBe(0);
+//         expect(wordpressRouter.answersTotal).toBe(0);
+//         getPageFromAPI(mockArgs.endpoint, mockArgs.lang, mockArgs.store, mockArgs.type, mockArgs.params);
+
+//         expect(wordpressRouter.answerCount).toBe(0);
+//         expect(wordpressRouter.answersTotal).toBe(1);
+//     });
+
+//     it('should format parameters with lang value and default per_page', () => {
+//         const getPageFromAPI = jest.fn();
+//         const wordpressRouter = new WordpressRouter();
+//         const defaultPerPage = 60;
+//         mockArgs.params = {
+//             lang: 'pt-br',
+//         };
+
+//         expect.assertions(1);
+//         return getPageFromAPI(mockArgs.endpoint, mockArgs.lang, mockArgs.store, mockArgs.type, mockArgs.params)
+//             .then((data) => {
+//                 expect(data.params).toBe('?lang=pt-br&per_page=' + defaultPerPage);
+//             });
+//     });
+
+//     it('should format parameters with per_page value and default lang', () => {
+//         const wordpressRouter = new WordpressRouter();
+//         const lang = Config.defaultLang;
+//         mockArgs.params = {
+//             per_page: 10,
+//         };
+
+//         expect.assertions(1);
+//         return wordpressRouter.getPageFromAPI(mockArgs.endpoint, mockArgs.lang, mockArgs.store, mockArgs.type, mockArgs.params)
+//             .then((data) => {
+//                 expect(data.params).toBe('?per_page=10&lang=' + lang);
+//             });
+//     });
+
+//     it('should format parameters with default per_page lang values if no parameters passed', () => {
+//         const wordpressRouter = new WordpressRouter();
+//         const lang = Config.defaultLang;
+//         const perPage = Config.wp_per_page;
+//         mockArgs.params = {};
+
+//         expect.assertions(1);
+//         return wordpressRouter.getPageFromAPI(mockArgs.endpoint, mockArgs.lang, mockArgs.store, mockArgs.type, mockArgs.params)
+//             .then((data) => {
+//                 expect(data.params).toBe('?lang=' + lang + '&per_page=' + perPage);
+//             });
+//     });
+
+//     it('should pass the correct arguments', () => {
+//         const wordpressRouter = new WordpressRouter();
+//         const uri = Config.wordpress.url + '/wp/v2';
+//         const lang = Config.defaultLang;
+//         const perPage = Config.wp_per_page;
+
+//         expect.assertions(4);
+
+//         return wordpressRouter.getPageFromAPI(mockArgs.endpoint, mockArgs.lang, mockArgs.store, mockArgs.type, mockArgs.params)
+//             .then((data) => {
+//                 expect(data.method).toBe('GET');
+//                 expect(data.endpoint).toBe('/pages');
+//                 expect(data.uri).toBe(uri);
+//                 expect(data.params).toBe('?lang=' + lang + '&per_page=' + perPage);
+//             });
+//     });
+
+//     it('should fill the correct array if type value is passed', () => {
+//         const wordpressRouter = new WordpressRouter();
+//         const uri = Config.wordpress.url + '/wp/v2';
+//         const lang = Config.defaultLang;
+//         mockArgs.type = 'pages';
+//         expect.assertions(1);
+
+//         return wordpressRouter.getPageFromAPI(mockArgs.endpoint, mockArgs.lang, mockArgs.store, mockArgs.type, mockArgs.params)
+//             .then((data) => {
+//                 const wpStorageTmp = wordpressRouter.getWpStorageTmp();
+//                 const expecedValue = wpStorageTmp[lang][mockArgs.store][mockArgs.type];
+//                 expect(expecedValue).toBe('callback called');
+//             });
+//     });
+
+//     it('should fill the correct array if type value is not passed', () => {
+//         const wordpressRouter = new WordpressRouter();
+//         const uri = Config.wordpress.url + '/wp/v2';
+//         const lang = Config.defaultLang;
+//         expect.assertions(1);
+
+//         return wordpressRouter.getPageFromAPI(mockArgs.endpoint, mockArgs.lang, mockArgs.store, mockArgs.type, mockArgs.params)
+//             .then((data) => {
+//                 const wpStorageTmp = wordpressRouter.getWpStorageTmp();
+//                 const expecedValue = wpStorageTmp[lang][mockArgs.store];
+//                 expect(expecedValue).toBe('callback called');
+//             });
+//     });
+// });
+
+// describe('wordpress router function getAll', () => {
+//     it('should return "hello world"', () => {
+//         return request(app).get('/')
+//             .expect(200)
+//             .then((res) => {
+//                 expect(res.type).toBe('application/json');
+//             });
+//     });
+// });
+
+// describe('wordpress router function getPages', () => {
+//     it('should return "hello world"', () => {
+//         // expect()
+//         return request(app).get('/pages')
+//             .expect(200)
+//             .then((res, req) => {
+//                 expect(res.type).toBe('application/json');
+//                 expect(res.status).toEqual(200);
+
+//                 expect(typeof res.body).toBe('object');
+//                 expect(res.body).toBeInstanceOf(Object);
+//                 // expect(res.body.message).toBe(Config.defaultLang);
+
+//                 // expect(req.query.lang)
+//                 // expect(res.body).to.have.length(5);
+//                 // expect(res.text).toBe('application/json');
+//                 // expect(res.text.message.pages).not.toBeNull();
+//             });
+//     });
+// });
