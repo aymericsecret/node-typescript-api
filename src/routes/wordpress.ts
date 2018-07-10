@@ -314,12 +314,11 @@ export default class WordpressRouter {
     }
 
     public reloadData = (req: Request, res: Response, next: NextFunction): void => {
-        this.init()
-        .then((success) => {
-            res.status(200).json({data: 'Data updated successfully'});
-        }, (error) => {
-            res.status(500).json({data: 'An error has occured'});
-        });
+        this.init().then((success) => {
+                res.status(200).json({data: 'Data updated successfully'});
+            }, (error) => {
+                res.status(500).json({data: 'An error has occured'});
+            });
     }
 
     /**
