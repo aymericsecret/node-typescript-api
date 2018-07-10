@@ -18,6 +18,7 @@ export default class WordpressRouter {
         // wordpressRouter.router.get('/categories', wordpressRouter.getCategories);
         wordpressRouter.router.get('/home_page', wordpressRouter.getHomePage);
         wordpressRouter.router.get('/collection_page', wordpressRouter.getCollections);
+        wordpressRouter.router.get('/admin/reload', wordpressRouter.reloadData);
     }
 
     public static getData = (wordpressRouter: WordpressRouter, lang: string, endpoint: string): number => {
@@ -63,6 +64,7 @@ export default class WordpressRouter {
         }
     }
 
+    public isInitialising: boolean;
     public router: Router;
     public path: string;
     public WP_URL = Config.wordpress.url;
@@ -79,6 +81,7 @@ export default class WordpressRouter {
      * Initialize the WordpressRouter
      */
     constructor(path = '/') {
+        this.isInitialising = false;
         this.router = Router();
         this.path = path;
 
@@ -153,7 +156,8 @@ export default class WordpressRouter {
         }
         this.answerCount++;
         if (this.answersTotal > 0 && this.answerCount === this.answersTotal) {
-            // console.log('Count Answer - Total Reached, Update data', this.answerCount, this.answersTotal);
+            console.log('Data updated');
+            this.isInitialising = false;
             this.setWpStorage(this.wpStorageTmp);
             this.initCountAnswers();
             return true;
@@ -309,6 +313,15 @@ export default class WordpressRouter {
         }
     }
 
+    public reloadData = (req: Request, res: Response, next: NextFunction): void => {
+        this.init()
+        .then((success) => {
+            res.status(200).json({data: 'Data updated successfully'});
+        }, (error) => {
+            res.status(500).json({data: 'An error has occured'});
+        });
+    }
+
     /**
      * INITIALIZATIONS
      */
@@ -354,74 +367,78 @@ export default class WordpressRouter {
     }
 
     public init = () => {
-        let langCount: number = 0;
-        const endpoints = Config.endpoints;
-        // let endpoint;
-        const resultsArray = {
-            error: [],
-            success: [],
-        };
-        this.initCountAnswers();
-        this.initExpiration(Config.expiration);
+        if (!this.isInitialising) {
+            this.isInitialising = true;
+            console.log('Updating data...');
+            let langCount: number = 0;
+            const endpoints = Config.endpoints;
+            // let endpoint;
+            const resultsArray = {
+                error: [],
+                success: [],
+            };
+            this.initCountAnswers();
+            this.initExpiration(Config.expiration);
 
-        const promise = new Promise((resolve, reject) => {
-            Config.langs.forEach((lang) => {
-                    let endpointCount: number = 0;
-                    endpoints.forEach((endpoint) => {
-                    // endpoint = '/pages';
-                        this.initLangEnpoints(lang, endpoint)
-                            .then((result) => {
-                                resultsArray.success.push(result);
-                                endpointCount++;
+            const promise = new Promise((resolve, reject) => {
+                Config.langs.forEach((lang) => {
+                        let endpointCount: number = 0;
+                        endpoints.forEach((endpoint) => {
+                        // endpoint = '/pages';
+                            this.initLangEnpoints(lang, endpoint)
+                                .then((result) => {
+                                    resultsArray.success.push(result);
+                                    endpointCount++;
 
-                                // console.log(endpointCount, endpoints.length);
+                                    // console.log(endpointCount, endpoints.length);
 
-                                if (endpointCount === endpoints.length) {
-                                    langCount++;
-                                    if (langCount === Config.langs.length) {
-                                        resolve(resultsArray);
+                                    if (endpointCount === endpoints.length) {
+                                        langCount++;
+                                        if (langCount === Config.langs.length) {
+                                            resolve(resultsArray);
+                                        }
                                     }
-                                }
-                            }, (error) => {
-                                resultsArray.error.push(error);
-                                endpointCount++;
-                                // console.log(endpointCount, endpoints.length);
-                                if (endpointCount === endpoints.length) {
-                                    langCount++;
-                                    if (langCount === Config.langs.length) {
-                                        reject(resultsArray);
+                                }, (error) => {
+                                    resultsArray.error.push(error);
+                                    endpointCount++;
+                                    // console.log(endpointCount, endpoints.length);
+                                    if (endpointCount === endpoints.length) {
+                                        langCount++;
+                                        if (langCount === Config.langs.length) {
+                                            reject(resultsArray);
+                                        }
                                     }
-                                }
-                            });
-                    });
+                                });
+                        });
 
-                    // endpoint = '/posts';
-                    // this.initLangEnpoints(lang, endpoint)
-                    //     .then((result) => {
-                    //         resultsArray.success.push(result);
-                    //         endpointCount++;
-                    //         // console.log(endpointCount, endpoints.length);
-                    //         if (endpointCount === endpoints.length) {
-                    //             langCount++;
-                    //             if (langCount === Config.langs.length) {
-                    //                 resolve(resultsArray);
-                    //             }
-                    //         }
-                    //     }, (error) => {
-                    //         resultsArray.error.push(error);
-                    //         endpointCount++;
-                    //         // console.log(endpointCount, endpoints.length);
-                    //         if (endpointCount === endpoints.length) {
-                    //             langCount++;
-                    //             if (langCount === Config.langs.length) {
-                    //                 reject(resultsArray);
-                    //             }
-                    //         }
-                    //     });
-                // });
-                // TODO: what if the call isn't successful?
+                        // endpoint = '/posts';
+                        // this.initLangEnpoints(lang, endpoint)
+                        //     .then((result) => {
+                        //         resultsArray.success.push(result);
+                        //         endpointCount++;
+                        //         // console.log(endpointCount, endpoints.length);
+                        //         if (endpointCount === endpoints.length) {
+                        //             langCount++;
+                        //             if (langCount === Config.langs.length) {
+                        //                 resolve(resultsArray);
+                        //             }
+                        //         }
+                        //     }, (error) => {
+                        //         resultsArray.error.push(error);
+                        //         endpointCount++;
+                        //         // console.log(endpointCount, endpoints.length);
+                        //         if (endpointCount === endpoints.length) {
+                        //             langCount++;
+                        //             if (langCount === Config.langs.length) {
+                        //                 reject(resultsArray);
+                        //             }
+                        //         }
+                        //     });
+                    // });
+                    // TODO: what if the call isn't successful?
+                });
             });
-        });
-        return promise;
+            return promise;
+        }
     }
 }

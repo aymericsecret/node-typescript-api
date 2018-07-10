@@ -9,7 +9,7 @@ export default function(): IConfig {
         case 'development':
             return {
                 base: {
-                    wordpress: '/',
+                    wordpress: '/clubebossa/wp',
                 },
                 defaultLang: 'en',
                 endpoints: ['pages', 'posts', 'home_page', 'collection_page'],
