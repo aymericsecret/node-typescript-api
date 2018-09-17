@@ -41,16 +41,16 @@ class App {
     this.express.use(bodyParser.json());
     this.express.use(bodyParser.urlencoded({ extended: true }));
 
-    // console.log('Env: ' + process.env.NODE_ENV);
-    // if (process.env.NODE_ENV !== 'development') {
-    //   // console.log('setting up jwt');
-    //   this.express.use(jwtCheck);
-    //   this.express.use((err, req, res, next) => {
-    //       if (err.name === 'UnauthorizedError') {
-    //           res.status(401).json({message: 'Missing or invalid token'});
-    //       }
-    //   });
-    // }
+    console.log('Env: ' + process.env.NODE_ENV);
+    if (process.env.NODE_ENV !== 'development') {
+      // console.log('setting up jwt');
+      this.express.use(jwtCheck);
+      this.express.use((err, req, res, next) => {
+          if (err.name === 'UnauthorizedError') {
+              res.status(401).json({message: 'Missing or invalid token'});
+          }
+      });
+    }
 
     this.express.use((req, res, next) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
