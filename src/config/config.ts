@@ -17,9 +17,10 @@ export default function(): IConfig {
                 expiration: (1 / 2) * 60 * 60 * 1000,
                 langs: ['en', 'pt-br'],
                 wordpress: {
-                    // url: 'http://localhost/clubebossa-frontend/backend/wp-json',
+                    // url: 'http://localhost/clubebossa-wc/wp-json',
+                    url: 'http://shop.clubebossa.com/wp-json',
                     // url: 'https://test.regularswitch.com/clubebossa-frontend/site/backend/wp-json',
-                    url: 'http://www.clubebossa.com/backend/wp-json',
+                    // url: 'http://www.clubebossa.com/backend/wp-json',
                 },
                 wp_per_page: 60,
             };
@@ -34,7 +35,9 @@ export default function(): IConfig {
                 expiration: (1 / 2) * 60 * 60 * 1000,
                 langs: ['en', 'pt-br'],
                 wordpress: {
-                    url: 'https://test.regularswitch.com/clubebossa-frontend/site/backend/wp-json',
+                    // url: 'https://test.regularswitch.com/clubebossa-frontend/site/backend/wp-json',
+                    url: 'http://shop.clubebossa.com/wp-json',
+                    // url: 'http://localhost/clubebossa-wc/wp-json',
                 },
                 wp_per_page: 60,
             };
@@ -49,7 +52,9 @@ export default function(): IConfig {
                 expiration: (1 / 2) * 60 * 60 * 1000,
                 langs: ['en', 'pt-br'],
                 wordpress: {
-                    url: 'http://www.clubebossa.com/backend/wp-json',
+                    // url: 'http://www.clubebossa.com/backend/wp-json',
+                    url: 'http://shop.clubebossa.com/wp-json',
+                    // url: 'http://localhost/clubebossa-wc/wp-json',
                 },
                 wp_per_page: 60,
             };
@@ -65,7 +70,9 @@ export default function(): IConfig {
                 // expiration: (2 / 2) * 60 * 60 * 1000,
                 langs: ['en', 'pt-br'],
                 wordpress: {
-                    url: 'http://www.clubebossa.com/backend/wp-json',
+                    // url: 'http://www.clubebossa.com/backend/wp-json',
+                    url: 'http://shop.clubebossa.com/wp-json',
+                    // url: 'http://localhost/clubebossa-wc/wp-json',
                 },
                 wp_per_page: 60,
             };
